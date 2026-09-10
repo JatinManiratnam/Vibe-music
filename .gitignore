@@ -1,0 +1,21 @@
+# Node
+node_modules/
+
+# Environment files
+.env
+backend/.env
+frontend/.env
+
+# Uploads
+backend/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build
+frontend/build/
+
+# OS
+.DS_Store
+Thumbs.db
