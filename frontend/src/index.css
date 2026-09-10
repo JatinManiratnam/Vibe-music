@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;600;700;800&display=swap');
+
+/* ── Design Tokens ── */
+:root {
+  /* Backgrounds */
+  --bg:           #121212;
+  --bg-2:         #181818;
+  --bg-card:      rgba(255, 255, 255, 0.04);
+  --bg-card-hover:rgba(255, 255, 255, 0.07);
+  --bg-elevated:  #1e1e1e;
+
+  /* Glassmorphism */
+  --glass-bg:     rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.09);
+
+  /* Sap-Green Accent palette */
+  --accent:       #4F7942;
+  --accent-dim:   #2E4732;
+  --accent-light: #6aab5b;
+  --accent-glow:  rgba(79, 121, 66, 0.22);
+
+  /* Text */
+  --text:         #EDEDED;
+  --text-muted:   #888;
+  --text-subtle:  #4a4a4a;
+
+  /* Status */
+  --success:      #5aad4e;
+  --error:        #c0392b;
+
+  /* Borders & radius */
+  --border:       rgba(255, 255, 255, 0.08);
+  --radius:       14px;
+  --radius-sm:    8px;
+  --radius-xl:    20px;
+
+  /* Shadow */
+  --shadow:       0 8px 24px rgba(0, 0, 0, 0.55);
+
+  /* Player */
+  --player-h:     70px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  font-family: 'Inter', 'Montserrat', system-ui, sans-serif;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--accent-light); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+input, textarea { font-family: inherit; }
+
+/* ── Utilities ── */
+.full-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
