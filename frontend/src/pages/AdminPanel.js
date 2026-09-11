@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useGlobalPlayer } from '../context/PlayerContext';
 import api from '../api/axios';
+import { getCoverSrc } from '../utils/cover';
 import {
   Users, Music2, UserCheck, Trash2, ShieldCheck,
   LogOut, LayoutDashboard, RefreshCw, ChevronDown,
@@ -603,7 +604,7 @@ const AdminPanel = () => {
                                 />
                                 {/* Cover thumbnail */}
                                 <img
-                                  src={song.coverImage || `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/songs/${song._id}/cover-url`}
+                                  src={getCoverSrc(song)}
                                   alt=""
                                   onError={(e) => { e.target.style.display = 'none'; }}
                                   style={{ width: '32px', height: '32px', borderRadius: '3px', objectFit: 'cover', flexShrink: 0 }}
@@ -650,7 +651,7 @@ const AdminPanel = () => {
                               >
                                 <span style={{ color: '#555', fontSize: '11px', minWidth: '18px' }}>{idx + 1}</span>
                                 <img
-                                  src={song.coverImage || `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/songs/${song._id}/cover-url`}
+                                  src={getCoverSrc(song)}
                                   alt=""
                                   onError={(e) => { e.target.style.display = 'none'; }}
                                   style={{ width: '28px', height: '28px', borderRadius: '3px', objectFit: 'cover', flexShrink: 0 }}
