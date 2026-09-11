@@ -4,9 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import SongCard from '../components/SongCard';
-import MusicPlayer from '../components/MusicPlayer';
 import PlaylistModal from '../components/PlaylistModal';
-import usePlayer from '../hooks/usePlayer';
+import { useGlobalPlayer } from '../context/PlayerContext';
 import '../styles/Home.css';
 
 const Home = () => {
@@ -20,11 +19,20 @@ const Home = () => {
   const [selectedSong, setSelectedSong] = useState(null);
   const [activePlaylist, setActivePlaylist] = useState(null);
   const [likeLoading, setLikeLoading] = useState({});
+  const [recommendations, setRecommendations] = useState([]);
+  const [recsLoading, setRecsLoading] = useState(true);
+  const [recsError, setRecsError] = useState(false);
+  const [activeQueueType, setActiveQueueType] = useState('all'); // 'all', 'playlist', 'recommendations', 'liked'
   const { user, updateUser } = useAuth();
+  const { player, setQueue, setPlaySource } = useGlobalPlayer();
 
-  const player = usePlayer(
-    activePlaylist ? activePlaylist.songs : songs
-  );
+  // The subset of songs displayed on the screen right now
+  let displaySongs = songs;
+  if (activeQueueType === 'liked') {
+    displaySongs = songs.filter(s => user?.likedSongs?.includes(s._id));
+  } else if (activePlaylist) {
+    displaySongs = activePlaylist.songs;
+  }
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -58,6 +66,26 @@ const Home = () => {
     fetchPlaylists();
   }, []);
 
+  // Fetch recommendations
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        setRecsLoading(true);
+        setRecsError(false);
+        const { data } = await api.get('/recommendations');
+        setRecommendations(data.recommendations || []);
+      } catch (err) {
+        console.error('Failed to fetch recommendations', err);
+        setRecsError(true);
+      } finally {
+        setRecsLoading(false);
+      }
+    };
+    if (user) {
+      fetchRecommendations();
+    }
+  }, [user]);
+
   const handleAddToPlaylist = (song) => {
     setSelectedSong(song);
     setShowModal(true);
@@ -82,16 +110,27 @@ const Home = () => {
     }
   };
 
-  const displaySongs = activePlaylist ? activePlaylist.songs : songs;
+  // Removed displaySongs from here, it's computed above
 
   return (
     <div className="home-layout">
       <Sidebar
         playlists={playlists}
         onRefresh={fetchPlaylists}
-        onSelectPlaylist={handleSelectPlaylist}
+        onSelectPlaylist={(playlist) => {
+          setActiveQueueType('playlist');
+          handleSelectPlaylist(playlist);
+        }}
         activePlaylist={activePlaylist}
-        onClearPlaylist={() => setActivePlaylist(null)}
+        onClearPlaylist={() => {
+          setActiveQueueType('all');
+          setActivePlaylist(null);
+        }}
+        onSelectLikedSongs={() => {
+          setActiveQueueType('liked');
+          setActivePlaylist(null);
+        }}
+        activeQueueType={activeQueueType}
       />
 
       <div className="home-main">
@@ -100,9 +139,56 @@ const Home = () => {
           setSearch={setSearch}
         />
 
-        <div className="home-content">
+        <div className="home-content" style={{ paddingBottom: '120px' }}>
+          {!activePlaylist && activeQueueType !== 'liked' && !search && (
+            <div className="recommendations-section" style={{ marginBottom: '3rem' }}>
+              <h2 className="section-title">✨ Recommended for You</h2>
+              {recsLoading ? (
+                <div className="loading-state">
+                  <p style={{ color: '#b3b3b3' }}>Loading recommendations...</p>
+                </div>
+              ) : recsError ? (
+                <div className="error-state">
+                  <p style={{ color: '#ff4b4b' }}>Unable to load recommendations.</p>
+                </div>
+              ) : recommendations.length === 0 ? (
+                <div className="empty-state">
+                  <p style={{ color: '#b3b3b3' }}>Keep listening to get personalized recommendations!</p>
+                </div>
+              ) : (
+                <div className="song-grid">
+                  {recommendations.map((song, index) => (
+                    <SongCard
+                      key={`rec-${song._id}`}
+                      song={song}
+                      index={index}
+                      isPlaying={activeQueueType === 'recommendations' && player.currentIndex === index && player.isPlaying}
+                      isActive={activeQueueType === 'recommendations' && player.currentIndex === index}
+                      isLiked={user?.likedSongs?.includes(song._id)}
+                      onLike={user ? handleLike : undefined}
+                      onPlay={() => {
+                        setActiveQueueType('recommendations');
+                        setQueue(recommendations);
+                        setPlaySource(() => () => 'recommendation');
+                        player.playSong(index);
+                      }}
+                      onAddToPlaylist={() => handleAddToPlaylist(song)}
+                      reason={song.reason}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <h2 className="section-title">
-            {activePlaylist ? `📋 ${activePlaylist.name}` : '🎵 All Songs'}
+            {activePlaylist 
+              ? `📋 ${activePlaylist.name}` 
+              : activeQueueType === 'liked' 
+              ? '❤️ Liked Songs'
+              : search 
+              ? '🔍 Search Results' 
+              : '🎵 All Songs'}
           </h2>
 
           {loading ? (
@@ -124,6 +210,8 @@ const Home = () => {
               <p style={{ color: '#b3b3b3', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
                 {activePlaylist
                   ? 'This playlist is empty. Add songs from the library!'
+                  : activeQueueType === 'liked'
+                  ? 'You haven\'t liked any songs yet.'
                   : search
                   ? 'No songs found.'
                   : 'No music available yet.'}
@@ -131,6 +219,8 @@ const Home = () => {
               <p style={{ color: '#888', fontSize: '0.9rem' }}>
                 {activePlaylist
                   ? ''
+                  : activeQueueType === 'liked'
+                  ? 'Click the heart icon on any song to add it here.'
                   : search
                   ? 'Try adjusting your search terms.'
                   : 'Songs will appear here once they are uploaded to the platform.'}
@@ -144,12 +234,18 @@ const Home = () => {
                   song={song}
                   index={index}
                   isPlaying={
+                    (activeQueueType === 'all' || activeQueueType === 'playlist') && 
                     player.currentIndex === index && player.isPlaying
                   }
-                  isActive={player.currentIndex === index}
+                  isActive={(activeQueueType === 'all' || activeQueueType === 'playlist') && player.currentIndex === index}
                   isLiked={user?.likedSongs?.includes(song._id)}
                   onLike={user ? handleLike : undefined}
-                  onPlay={() => player.playSong(index)}
+                  onPlay={() => {
+                    setActiveQueueType(activePlaylist ? 'playlist' : activeQueueType === 'liked' ? 'liked' : 'all');
+                    setQueue(displaySongs);
+                    setPlaySource(() => () => activePlaylist ? 'playlist' : 'direct');
+                    player.playSong(index);
+                  }}
                   onAddToPlaylist={() => handleAddToPlaylist(song)}
                 />
               ))}
@@ -157,7 +253,6 @@ const Home = () => {
           )}
         </div>
 
-        <MusicPlayer player={player} />
       </div>
 
       {showModal && (

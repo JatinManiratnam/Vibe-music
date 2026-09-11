@@ -69,5 +69,9 @@ const songSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+// Indexes for recommendations
+songSchema.index({ genre: 1 });
+songSchema.index({ artist: 1 });
+songSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Song', songSchema);

@@ -1,4 +1,4 @@
-import { Play, Pause, SkipBack, SkipForward, Volume2, Shuffle, Repeat, Repeat1 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Shuffle, Repeat, Repeat1, X } from 'lucide-react';
 import { getCoverSrc } from '../utils/cover';
 import '../styles/MusicPlayer.css';
 
@@ -32,6 +32,7 @@ const MusicPlayer = ({ player }) => {
     setVolume,
     toggleShuffle,
     toggleRepeat,
+    clearSong,
   } = player;
 
   const progressPercent = duration ? (progress / duration) * 100 : 0;
@@ -139,6 +140,14 @@ const MusicPlayer = ({ player }) => {
             style={{ '--progress': `${volume * 100}%` }}
           />
         </div>
+        <button
+          onClick={clearSong}
+          className="ctrl-btn"
+          style={{ marginLeft: '10px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#aaa' }}
+          title="Dismiss Player"
+        >
+          <X size={20} />
+        </button>
       </div>
     </div>
   );

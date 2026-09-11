@@ -11,7 +11,7 @@ const formatDuration = (seconds) => {
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-const SongCard = ({ song, index, isPlaying, isActive, onPlay, onAddToPlaylist, isLiked, onLike }) => {
+const SongCard = ({ song, index, isPlaying, isActive, onPlay, onAddToPlaylist, isLiked, onLike, reason }) => {
   return (
     <div className={`song-card ${isActive ? 'active' : ''}`}>
       <div className="song-cover-wrap" onClick={onPlay}>
@@ -38,6 +38,11 @@ const SongCard = ({ song, index, isPlaying, isActive, onPlay, onAddToPlaylist, i
           <span>{song.album}</span>
           <span>{formatDuration(song.duration)}</span>
         </p>
+        {reason && (
+          <p className="song-reason" style={{ fontSize: '0.8rem', color: '#1db954', marginTop: '0.4rem', fontStyle: 'italic' }}>
+            {reason}
+          </p>
+        )}
       </div>
 
       <div className="song-card-actions" style={{ display: 'flex', gap: '0.5rem' }}>

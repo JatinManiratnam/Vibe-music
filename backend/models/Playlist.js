@@ -22,6 +22,10 @@ const playlistSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

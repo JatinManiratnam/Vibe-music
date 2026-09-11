@@ -410,9 +410,16 @@ const recordPlay = async (req, res) => {
       return res.status(404).json({ message: 'Song not found' });
     }
 
+    // Accept an optional source field from the client.
+    // Only allow known enum values; anything else falls back to 'direct'
+    // so that old clients and new clients both work.
+    const ALLOWED_SOURCES = ['direct', 'recommendation', 'playlist'];
+    const source = ALLOWED_SOURCES.includes(req.body?.source) ? req.body.source : 'direct';
+
     await Play.create({
       song: songId,
       user: req.user._id,
+      source,
     });
 
     res.json({ recorded: true });
@@ -434,10 +441,13 @@ const getContributorAnalytics = async (req, res) => {
 
     // Default empty response
     const emptyResponse = {
+      totalSongs: 0,
       totalPlays: 0,
+      totalLikes: 0,
       totalListeners: 0,
       topSongs: [],
-      recentPlays: [],
+      recentPlays: [], // Deprecated, keeping for backward safety
+      recentSongs: [],
       playsOverTime: [],
     };
 
@@ -486,7 +496,31 @@ const getContributorAnalytics = async (req, res) => {
       }}
     ]);
 
-    // 4. Recent Plays
+    // Calculate likes for top songs (we do this manually since likes are in User.likedSongs)
+    const topSongIds = topSongsAgg.map(s => s._id);
+    const likesAgg = await User.aggregate([
+      { $project: { likedSongs: 1 } },
+      { $unwind: '$likedSongs' },
+      { $match: { likedSongs: { $in: topSongIds } } },
+      { $group: { _id: '$likedSongs', likeCount: { $sum: 1 } } }
+    ]);
+    const likeMap = {};
+    likesAgg.forEach(l => { likeMap[l._id.toString()] = l.likeCount; });
+
+    topSongsAgg.forEach(s => {
+      s.likeCount = likeMap[s._id.toString()] || 0;
+    });
+
+    // Calculate Total Likes for all songs
+    const totalLikesAgg = await User.aggregate([
+      { $project: { likedSongs: 1 } },
+      { $unwind: '$likedSongs' },
+      { $match: { likedSongs: { $in: songIds } } },
+      { $count: 'totalLikes' }
+    ]);
+    const totalLikes = totalLikesAgg.length > 0 ? totalLikesAgg[0].totalLikes : 0;
+
+    // 4. Recent Plays (keeping for backward compatibility if needed, but adding Recent Songs)
     const recentPlaysRaw = await Play.find({ song: { $in: songIds } })
       .sort({ createdAt: -1 })
       .limit(10)
@@ -501,10 +535,17 @@ const getContributorAnalytics = async (req, res) => {
       coverB2Key: p.song.coverB2Key
     }));
 
-    // 5. Plays Over Time (Last 30 Days)
+    // 4.5 Recent Songs (Uploads)
+    const recentSongs = await Song.find({ addedBy: contributorId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('title artist coverImage coverB2Key createdAt');
+
+    // 5. Per-song plays over time (last 30 days) — ONE aggregation for ALL songs
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    // 5a. Overall daily plays (all creator songs combined)
     const playsOverTimeRaw = await Play.aggregate([
       { $match: { song: { $in: songIds }, createdAt: { $gte: thirtyDaysAgo } } },
       { $group: {
@@ -519,12 +560,86 @@ const getContributorAnalytics = async (req, res) => {
       plays: p.plays
     }));
 
+    // 5b. Per-song daily plays (last 30 days) — grouped by song + date
+    const perSongDailyRaw = await Play.aggregate([
+      { $match: { song: { $in: songIds }, createdAt: { $gte: thirtyDaysAgo } } },
+      { $group: {
+          _id: {
+            song: '$song',
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+          },
+          plays: { $sum: 1 }
+      }},
+      { $sort: { '_id.date': 1 } }
+    ]);
+
+    // Build a map: songId -> { date -> plays }
+    const perSongDailyMap = {};
+    perSongDailyRaw.forEach(r => {
+      const sid = r._id.song.toString();
+      if (!perSongDailyMap[sid]) perSongDailyMap[sid] = {};
+      perSongDailyMap[sid][r._id.date] = r.plays;
+    });
+
+    // 6. All creator songs — total plays + likes per song
+    const allSongsRaw = await Song.find({ addedBy: contributorId })
+      .sort({ createdAt: -1 })
+      .select('_id title artist coverImage coverB2Key createdAt');
+
+    // Plays per song
+    const playsPerSongAgg = await Play.aggregate([
+      { $match: { song: { $in: songIds } } },
+      { $group: { _id: '$song', totalPlays: { $sum: 1 } } }
+    ]);
+    const playsPerSongMap = {};
+    playsPerSongAgg.forEach(p => { playsPerSongMap[p._id.toString()] = p.totalPlays; });
+
+    // Likes per song (from User.likedSongs)
+    const allSongLikesAgg = await User.aggregate([
+      { $project: { likedSongs: 1 } },
+      { $unwind: '$likedSongs' },
+      { $match: { likedSongs: { $in: songIds } } },
+      { $group: { _id: '$likedSongs', likeCount: { $sum: 1 } } }
+    ]);
+    const allSongLikesMap = {};
+    allSongLikesAgg.forEach(l => { allSongLikesMap[l._id.toString()] = l.likeCount; });
+
+    // Build zero-filled 30-day dailyPlays for each song
+    const dateRange = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dateRange.push(d.toISOString().split('T')[0]);
+    }
+
+    const songs30d = allSongsRaw.map(song => {
+      const sid = song._id.toString();
+      const dayMap = perSongDailyMap[sid] || {};
+      const dailyPlays = dateRange.map(date => ({ date, plays: dayMap[date] || 0 }));
+      return {
+        _id: sid,
+        title: song.title,
+        artist: song.artist,
+        coverImage: song.coverImage,
+        coverB2Key: song.coverB2Key,
+        totalPlays: playsPerSongMap[sid] || 0,
+        totalLikes: allSongLikesMap[sid] || 0,
+        dailyPlays
+      };
+    });
+
+    // Sort by totalPlays descending
+    songs30d.sort((a, b) => b.totalPlays - a.totalPlays);
+
     res.json({
+      totalSongs: songIds.length,
       totalPlays,
+      totalLikes,
       totalListeners,
       topSongs: topSongsAgg,
-      recentPlays,
+      recentSongs,
       playsOverTime,
+      songs: songs30d,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -10,10 +10,13 @@ const createPlaylist = async (req, res) => {
       return res.status(400).json({ message: 'Playlist name is required' });
     }
 
+    const isPublic = req.user.role === 'admin' ? Boolean(req.body.isPublic) : false;
+
     const playlist = await Playlist.create({
       name,
       owner: req.user._id,
       songs: [],
+      isPublic,
     });
 
     res.status(201).json(playlist);
@@ -27,7 +30,9 @@ const createPlaylist = async (req, res) => {
 // @access  Private
 const getUserPlaylists = async (req, res) => {
   try {
-    const playlists = await Playlist.find({ owner: req.user._id })
+    const playlists = await Playlist.find({
+      $or: [{ owner: req.user._id }, { isPublic: true }],
+    })
       .populate('songs')
       .sort({ createdAt: -1 });
     res.json(playlists);
@@ -45,7 +50,7 @@ const getPlaylistById = async (req, res) => {
     if (!playlist) {
       return res.status(404).json({ message: 'Playlist not found' });
     }
-    if (playlist.owner.toString() !== req.user._id.toString()) {
+    if (playlist.owner.toString() !== req.user._id.toString() && !playlist.isPublic) {
       return res.status(403).json({ message: 'Not authorized' });
     }
     res.json(playlist);
@@ -65,8 +70,10 @@ const addSongToPlaylist = async (req, res) => {
     if (!playlist) {
       return res.status(404).json({ message: 'Playlist not found' });
     }
-    if (playlist.owner.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
+    const isOwner = playlist.owner.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Not authorized to edit this playlist' });
     }
 
     // Avoid duplicates
@@ -94,8 +101,10 @@ const removeSongFromPlaylist = async (req, res) => {
     if (!playlist) {
       return res.status(404).json({ message: 'Playlist not found' });
     }
-    if (playlist.owner.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
+    const isOwner = playlist.owner.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Not authorized to edit this playlist' });
     }
 
     playlist.songs = playlist.songs.filter(
@@ -120,8 +129,10 @@ const deletePlaylist = async (req, res) => {
     if (!playlist) {
       return res.status(404).json({ message: 'Playlist not found' });
     }
-    if (playlist.owner.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
+    const isOwner = playlist.owner.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Not authorized to delete this playlist' });
     }
 
     await playlist.deleteOne();

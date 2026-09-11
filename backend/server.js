@@ -24,6 +24,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/songs', require('./routes/songRoutes'));
 app.use('/api/playlists', require('./routes/playlistRoutes'));
+app.use('/api/recommendations', require('./routes/recommendationRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Health check

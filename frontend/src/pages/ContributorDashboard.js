@@ -32,18 +32,17 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
   </div>
 );
 
-
-
 /* ── Dashboard ───────────────────────────────────────────────── */
 const ContributorDashboard = () => {
   const { user, logout } = useAuth();
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [songs, setSongs] = useState([]);
   const [analytics, setAnalytics] = useState({
+    totalSongs: 0,
     totalPlays: 0,
+    totalLikes: 0,
     totalListeners: 0,
     topSongs: [],
-    recentPlays: [],
+    recentSongs: [],
     playsOverTime: []
   });
   const [loading, setLoading] = useState(true);
@@ -52,11 +51,7 @@ const ContributorDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [songsRes, analyticsRes] = await Promise.all([
-        api.get('/songs/mine'),
-        api.get('/songs/analytics')
-      ]);
-      setSongs(songsRes.data);
+      const analyticsRes = await api.get('/songs/analytics');
       setAnalytics(analyticsRes.data);
       setError(false);
     } catch (err) {
@@ -72,10 +67,10 @@ const ContributorDashboard = () => {
   }, []);
 
   const stats = [
-    { icon: Music2,   label: 'Total Songs',     value: loading ? '...' : songs.length, color: '#4F7942' },
+    { icon: Music2,   label: 'Total Songs',     value: loading ? '...' : analytics.totalSongs, color: '#4F7942' },
     { icon: Play,     label: 'Total Plays',      value: loading ? '...' : analytics.totalPlays, color: '#3b82f6' },
-    { icon: Heart,    label: 'Total Likes',      value: 'Not tracked yet', color: '#ec4899' },
-    { icon: Users,    label: 'Total Listeners',  value: loading ? '...' : analytics.totalListeners, color: '#f59e0b' },
+    { icon: Heart,    label: 'Total Likes',      value: loading ? '...' : analytics.totalLikes, color: '#ec4899' },
+    { icon: Users,    label: 'Unique Listeners', value: loading ? '...' : analytics.totalListeners, color: '#f59e0b' },
   ];
 
   const getChartData = () => {
@@ -89,7 +84,8 @@ const ContributorDashboard = () => {
       playMap[p.date] = p.plays;
     });
 
-    for (let i = 29; i >= 0; i--) {
+    // Last 7 days
+    for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const dateString = d.toISOString().split('T')[0];
@@ -124,12 +120,10 @@ const ContributorDashboard = () => {
             <ListMusic size={16} />
             <span>My Songs</span>
           </Link>
-          {/* Analytics — placeholder */}
-          <span className="dash-nav-item dash-nav-disabled">
+          <Link className="dash-nav-item" to="/dashboard/analytics">
             <BarChart2 size={16} />
             <span>Analytics</span>
-          </span>
-
+          </Link>
         </nav>
 
         <button className="dash-nav-logout" onClick={logout}>
@@ -145,7 +139,7 @@ const ContributorDashboard = () => {
           <div>
             <h1 className="dash-title">Creator Dashboard</h1>
             <p className="dash-subtitle">
-              Manage your music and track your performance.
+              Track your music performance.
             </p>
           </div>
           <div className="dash-header-actions">
@@ -167,8 +161,19 @@ const ContributorDashboard = () => {
         {/* Welcome strip */}
         <div className="dash-welcome">
           <span>👋</span>
-          <span>Welcome back, <strong>{user?.name}</strong>! You're logged in as a <strong>{user?.role}</strong>.</span>
+          <span>Welcome back, <strong>{user?.name}</strong>!</span>
         </div>
+
+        {analytics.totalSongs === 0 && !loading && !error && (
+          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '2rem', textAlign: 'center', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '2rem' }}>
+            <UploadCloud size={48} style={{ color: '#888', marginBottom: '1rem' }} />
+            <h3 style={{ margin: '0 0 0.5rem 0' }}>No music yet</h3>
+            <p style={{ color: '#aaa', margin: '0 0 1.5rem 0' }}>Upload your first song to start tracking performance.</p>
+            <button className="dash-btn dash-btn-primary" onClick={() => setUploadModalOpen(true)}>
+              Upload Music
+            </button>
+          </div>
+        )}
 
         {/* Stat cards */}
         <div className="dash-stats-grid">
@@ -177,76 +182,12 @@ const ContributorDashboard = () => {
           ))}
         </div>
 
-        {/* Placeholder sections */}
+        {/* Sections */}
         <div className="dash-sections">
-          <div className="dash-placeholder-section" style={{ padding: '1.5rem', textAlign: 'left' }}>
-            <div className="dash-placeholder-header" style={{ marginBottom: '1.5rem', justifyContent: 'flex-start' }}>
-              <Play size={18} />
-              <h3 style={{ margin: 0 }}>Recent Activity</h3>
-            </div>
-            <div className="dash-placeholder-body" style={{ alignItems: 'stretch' }}>
-              {loading ? (
-                <p>Loading analytics...</p>
-              ) : error ? (
-                <div style={{ textAlign: 'center' }}>
-                  <p>Unable to load dashboard data.</p>
-                  <button onClick={fetchData} className="dash-btn dash-btn-outline" style={{ marginTop: '1rem', display: 'inline-flex' }}>Retry</button>
-                </div>
-              ) : analytics.recentPlays.length === 0 ? (
-                <p style={{ textAlign: 'center' }}>No recent activity.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {analytics.recentPlays.map((play, idx) => (
-                    <div key={`${play.songId}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <img src={getCoverSrc(play)} alt={play.title} style={{ width: '48px', height: '48px', borderRadius: '4px', objectFit: 'cover' }} />
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: 0, fontSize: '1rem', color: '#fff' }}>{play.title}</h4>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: '#b3b3b3' }}>A listener played your song</p>
-                      </div>
-                      <div style={{ fontSize: '0.8rem', color: '#888', textAlign: 'right' }}>
-                        {new Date(play.playedAt).toLocaleDateString()}<br/>
-                        {new Date(play.playedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="dash-placeholder-section" style={{ padding: '1.5rem', textAlign: 'left' }}>
-            <div className="dash-placeholder-header" style={{ marginBottom: '1.5rem', justifyContent: 'flex-start' }}>
-              <TrendingUp size={18} />
-              <h3 style={{ margin: 0 }}>Most Played Songs</h3>
-            </div>
-            <div className="dash-placeholder-body" style={{ alignItems: 'stretch' }}>
-              {loading ? (
-                <p>Loading analytics...</p>
-              ) : error ? (
-                <p>Unable to load data.</p>
-              ) : analytics.topSongs.length === 0 ? (
-                <p style={{ textAlign: 'center' }}>No plays yet.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {analytics.topSongs.map(song => (
-                    <div key={song._id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                      <img src={getCoverSrc(song)} alt={song.title} style={{ width: '48px', height: '48px', borderRadius: '4px', objectFit: 'cover' }} />
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: 0, fontSize: '1rem', color: '#fff' }}>{song.title}</h4>
-                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: '#b3b3b3' }}>{song.artist} {song.album ? `• ${song.album}` : ''}</p>
-                      </div>
-                      <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1db954' }}>
-                        {song.playCount} plays
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
           <div className="dash-placeholder-section" style={{ padding: '1.5rem', textAlign: 'left', gridColumn: '1 / -1' }}>
             <div className="dash-placeholder-header" style={{ marginBottom: '1.5rem', justifyContent: 'flex-start' }}>
               <BarChart2 size={18} />
-              <h3 style={{ margin: 0 }}>Plays Over Time</h3>
+              <h3 style={{ margin: 0 }}>Performance (Last 7 Days)</h3>
             </div>
             <div className="dash-placeholder-body" style={{ alignItems: 'stretch' }}>
               {loading ? (
@@ -254,7 +195,9 @@ const ContributorDashboard = () => {
               ) : error ? (
                 <p>Unable to load data.</p>
               ) : analytics.totalPlays === 0 ? (
-                <p style={{ textAlign: 'center' }}>No plays yet.</p>
+                <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <p style={{ color: '#888' }}>Performance data will appear as listeners play your music.</p>
+                </div>
               ) : (
                 <div style={{ width: '100%', height: 300 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -278,10 +221,70 @@ const ContributorDashboard = () => {
               )}
             </div>
           </div>
+          
+          <div className="dash-placeholder-section" style={{ padding: '1.5rem', textAlign: 'left' }}>
+            <div className="dash-placeholder-header" style={{ marginBottom: '1.5rem', justifyContent: 'flex-start' }}>
+              <TrendingUp size={18} />
+              <h3 style={{ margin: 0 }}>Top Songs</h3>
+            </div>
+            <div className="dash-placeholder-body" style={{ alignItems: 'stretch' }}>
+              {loading ? (
+                <p>Loading...</p>
+              ) : error ? (
+                <p>Error</p>
+              ) : analytics.topSongs.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#888' }}>No plays yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {analytics.topSongs.map(song => (
+                    <div key={song._id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <img src={getCoverSrc(song)} alt={song.title} style={{ width: '48px', height: '48px', borderRadius: '4px', objectFit: 'cover' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4 style={{ margin: 0, fontSize: '1rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.title}</h4>
+                        <div style={{ display: 'flex', gap: '0.5rem', margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: '#b3b3b3' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Play size={12}/> {song.playCount}</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Heart size={12}/> {song.likeCount || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="dash-placeholder-section" style={{ padding: '1.5rem', textAlign: 'left' }}>
+            <div className="dash-placeholder-header" style={{ marginBottom: '1.5rem', justifyContent: 'flex-start' }}>
+              <Music2 size={18} />
+              <h3 style={{ margin: 0 }}>Recent Uploads</h3>
+            </div>
+            <div className="dash-placeholder-body" style={{ alignItems: 'stretch' }}>
+              {loading ? (
+                <p>Loading...</p>
+              ) : error ? (
+                <p>Error</p>
+              ) : analytics.recentSongs.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#888' }}>No uploads.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {analytics.recentSongs.map((song) => (
+                    <div key={song._id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <img src={getCoverSrc(song)} alt={song.title} style={{ width: '48px', height: '48px', borderRadius: '4px', objectFit: 'cover' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4 style={{ margin: 0, fontSize: '1rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{song.title}</h4>
+                        <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: '#b3b3b3' }}>{new Date(song.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
         </div>
       </main>
 
-      {/* Real UploadSongModal — contributor portal upload */}
+      {/* Upload Modal */}
       {uploadModalOpen && (
         <UploadSongModal
           onClose={() => setUploadModalOpen(false)}

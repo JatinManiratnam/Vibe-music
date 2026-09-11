@@ -3,9 +3,12 @@ import api from '../api/axios';
 import { ListMusic, PlusCircle, Trash2, ChevronRight } from 'lucide-react';
 import '../styles/Sidebar.css';
 
-const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onClearPlaylist }) => {
+const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onClearPlaylist, onSelectLikedSongs, activeQueueType }) => {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
+
+  const myPlaylists = playlists.filter(p => !p.isPublic);
+  const curatedPlaylists = playlists.filter(p => p.isPublic);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -40,20 +43,27 @@ const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onCle
 
       <div className="sidebar-section">
         <div
-          className={`sidebar-item all-songs ${!activePlaylist ? 'active' : ''}`}
+          className={`sidebar-item all-songs ${activeQueueType === 'all' && !activePlaylist ? 'active' : ''}`}
           onClick={onClearPlaylist}
         >
           <span>🎵 All Songs</span>
           <ChevronRight size={14} />
         </div>
+        <div
+          className={`sidebar-item liked-songs ${activeQueueType === 'liked' && !activePlaylist ? 'active' : ''}`}
+          onClick={onSelectLikedSongs}
+        >
+          <span>❤️ Liked Songs</span>
+          <ChevronRight size={14} />
+        </div>
       </div>
 
       <div className="sidebar-playlists">
-        <div className="sidebar-label">Playlists</div>
-        {playlists.length === 0 && (
+        <div className="sidebar-label">My Playlists</div>
+        {myPlaylists.length === 0 && (
           <p className="sidebar-empty">No playlists yet</p>
         )}
-        {playlists.map((pl) => (
+        {myPlaylists.map((pl) => (
           <div
             key={pl._id}
             className={`sidebar-item ${activePlaylist?._id === pl._id ? 'active' : ''}`}
@@ -70,6 +80,23 @@ const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onCle
               >
                 <Trash2 size={13} />
               </button>
+            </div>
+          </div>
+        ))}
+
+        <div className="sidebar-label" style={{ marginTop: '20px' }}>Vibe Music Playlists</div>
+        {curatedPlaylists.length === 0 && (
+          <p className="sidebar-empty">No curated playlists yet</p>
+        )}
+        {curatedPlaylists.map((pl) => (
+          <div
+            key={pl._id}
+            className={`sidebar-item ${activePlaylist?._id === pl._id ? 'active' : ''}`}
+            onClick={() => onSelectPlaylist(pl)}
+          >
+            <span className="pl-name" title={pl.name}>✨ {pl.name}</span>
+            <div className="pl-actions">
+              <span className="pl-count">{pl.songs.length}</span>
             </div>
           </div>
         ))}

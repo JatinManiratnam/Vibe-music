@@ -10,10 +10,16 @@ import api from '../api/axios';
  *    B2 serves the audio directly — Render bandwidth is NOT consumed.
  *  - Legacy local songs (song.url, no b2Key): set audio.src = song.url directly.
  *
+ * Play origin tracking:
+ *  - getPlaySource: optional callback () => 'direct' | 'recommendation' | 'playlist'
+ *    The callback is called at the moment the 10-second threshold is reached so it
+ *    reflects whatever queue is active at that instant — not at song-load time.
+ *    Using a ref keeps the timeupdate effect stable (no re-subscription on every render).
+ *
  * All other player behaviour (play/pause, next/prev, seek, volume, queue)
  * is unchanged.
  */
-const usePlayer = (songs) => {
+const usePlayer = (songs, getPlaySource) => {
   const [currentIndex, setCurrentIndex] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -30,11 +36,17 @@ const usePlayer = (songs) => {
   const recordedPlayForSongId = useRef(null);
   const currentLoadIdRef = useRef(null);
   const shuffleHistory = useRef([]);
+  // Stable ref to the getPlaySource callback — updated every render so the
+  // timeupdate handler always reads the latest value without re-subscribing.
+  const getPlaySourceRef = useRef(getPlaySource);
   
   // Refs for smooth quality switching
   const isQualitySwitchRef = useRef(false);
   const cachedTimeRef = useRef(0);
   const wasPlayingRef = useRef(false);
+
+  // Keep the getPlaySource ref in sync with the latest prop on every render.
+  getPlaySourceRef.current = getPlaySource;
 
   const currentSong = currentIndex !== null ? songs[currentIndex] : null;
 
@@ -173,11 +185,18 @@ const usePlayer = (songs) => {
     const updateProgress = () => {
       setProgress(audio.currentTime);
       
-      // Track play if current time > 10s OR reached the end of a short song
+      // Track play if current time > 10s OR reached the end of a short song.
+      // The source is resolved at this moment (not at song-load time) so that
+      // switching queue type before the 10s mark records the correct origin.
+      // Quality switches reset the load ID but keep recordedPlayForSongId intact,
+      // so a STD↔FLAC switch never creates a second Play record for the same song.
       if (currentSong && recordedPlayForSongId.current !== currentSong._id) {
         if (audio.currentTime >= 10 || (audio.duration > 0 && audio.currentTime >= audio.duration)) {
           recordedPlayForSongId.current = currentSong._id;
-          api.post(`/songs/${currentSong._id}/play`).catch((err) => {
+          const source = typeof getPlaySourceRef.current === 'function'
+            ? getPlaySourceRef.current()
+            : 'direct';
+          api.post(`/songs/${currentSong._id}/play`, { source }).catch((err) => {
             console.error('[usePlayer] Failed to record play:', err.message);
           });
         }
@@ -253,6 +272,17 @@ const usePlayer = (songs) => {
     setProgress(time);
   };
 
+  const clearSong = useCallback(() => {
+    const audio = audioRef.current;
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    setCurrentIndex(null);
+    setIsPlaying(false);
+    setProgress(0);
+    currentLoadIdRef.current = null;
+  }, []);
+
   const changeQuality = useCallback((newQuality) => {
     if (newQuality === preferredQuality) return;
     
@@ -281,6 +311,7 @@ const usePlayer = (songs) => {
     playNext,
     playPrev,
     seek,
+    clearSong,
     setVolume,
     toggleShuffle: () => setIsShuffle(prev => !prev),
     toggleRepeat: () => setRepeatMode(prev => prev === 'OFF' ? 'REPEAT_ALL' : prev === 'REPEAT_ALL' ? 'REPEAT_ONE' : 'OFF'),
