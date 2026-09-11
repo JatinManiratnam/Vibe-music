@@ -1,9 +1,9 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-// Generate JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+// Generate JWT — carries id + role so middleware and frontend both have it
+const generateToken = (id, role) => {
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
 // @desc    Register a new user
@@ -11,6 +11,8 @@ const generateToken = (id) => {
 // @access  Public
 const register = async (req, res) => {
   try {
+    // Only accept name/email/password — role is always set by schema default ('listener').
+    // Any role value supplied by the client is intentionally ignored here.
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -28,7 +30,9 @@ const register = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
-      token: generateToken(user._id),
+      role: user.role,
+      likedSongs: user.likedSongs || [],
+      token: generateToken(user._id, user.role),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -60,7 +64,9 @@ const login = async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
-      token: generateToken(user._id),
+      role: user.role,
+      likedSongs: user.likedSongs || [],
+      token: generateToken(user._id, user.role),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -75,6 +81,8 @@ const getMe = async (req, res) => {
     _id: req.user._id,
     name: req.user.name,
     email: req.user.email,
+    role: req.user.role ?? 'listener',
+    likedSongs: req.user.likedSongs || [],
   });
 };
 

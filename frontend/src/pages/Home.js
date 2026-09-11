@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import SongCard from '../components/SongCard';
 import MusicPlayer from '../components/MusicPlayer';
 import PlaylistModal from '../components/PlaylistModal';
-import UploadSongModal from '../components/UploadSongModal';
 import usePlayer from '../hooks/usePlayer';
 import '../styles/Home.css';
 
@@ -14,31 +14,35 @@ const Home = () => {
   const [playlists, setPlaylists] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryTrigger, setRetryTrigger] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [selectedSong, setSelectedSong] = useState(null);
   const [activePlaylist, setActivePlaylist] = useState(null);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [likeLoading, setLikeLoading] = useState({});
+  const { user, updateUser } = useAuth();
 
   const player = usePlayer(
     activePlaylist ? activePlaylist.songs : songs
   );
 
-  // Fetch songs on search change
   useEffect(() => {
     const fetchSongs = async () => {
       try {
         setLoading(true);
+        setError(false);
         const { data } = await api.get(`/songs${search ? `?search=${search}` : ''}`);
         setSongs(data);
       } catch (err) {
         console.error('Failed to fetch songs', err);
+        setError(true);
       } finally {
         setLoading(false);
       }
     };
     const delay = setTimeout(fetchSongs, 300); // debounce
     return () => clearTimeout(delay);
-  }, [search]);
+  }, [search, retryTrigger]);
 
   // Fetch playlists
   const fetchPlaylists = async () => {
@@ -63,6 +67,21 @@ const Home = () => {
     setActivePlaylist(playlist);
   };
 
+  const handleLike = async (songId) => {
+    if (!user) return; // User must be logged in to like
+    if (likeLoading[songId]) return; // Prevent rapid duplicate requests
+
+    try {
+      setLikeLoading((prev) => ({ ...prev, [songId]: true }));
+      const { data } = await api.post(`/songs/${songId}/like`);
+      updateUser({ likedSongs: data.likedSongs });
+    } catch (err) {
+      console.error('Failed to toggle like', err);
+    } finally {
+      setLikeLoading((prev) => ({ ...prev, [songId]: false }));
+    }
+  };
+
   const displaySongs = activePlaylist ? activePlaylist.songs : songs;
 
   return (
@@ -79,7 +98,6 @@ const Home = () => {
         <Navbar
           search={search}
           setSearch={setSearch}
-          onUploadClick={() => setShowUploadModal(true)}
         />
 
         <div className="home-content">
@@ -88,19 +106,34 @@ const Home = () => {
           </h2>
 
           {loading ? (
-            <div className="loading-state">
-              <div className="spinner" />
-              <p>Loading songs...</p>
+            <div className="loading-state" style={{ textAlign: 'center', marginTop: '4rem' }}>
+              <p style={{ color: '#b3b3b3' }}>Loading songs...</p>
+            </div>
+          ) : error ? (
+            <div className="error-state" style={{ textAlign: 'center', marginTop: '4rem' }}>
+              <p style={{ color: '#ff4b4b', marginBottom: '1rem' }}>Unable to load songs.</p>
+              <button 
+                onClick={() => setRetryTrigger(prev => prev + 1)} 
+                style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #ff4b4b', color: '#ff4b4b', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                Retry
+              </button>
             </div>
           ) : displaySongs.length === 0 ? (
-            <div className="empty-state">
-              <span>🎧</span>
-              <p>
+            <div className="empty-state" style={{ textAlign: 'center', marginTop: '4rem' }}>
+              <p style={{ color: '#b3b3b3', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
                 {activePlaylist
                   ? 'This playlist is empty. Add songs from the library!'
                   : search
-                  ? `No songs found for "${search}"`
-                  : 'No songs yet. Add songs via the API to get started!'}
+                  ? 'No songs found.'
+                  : 'No music available yet.'}
+              </p>
+              <p style={{ color: '#888', fontSize: '0.9rem' }}>
+                {activePlaylist
+                  ? ''
+                  : search
+                  ? 'Try adjusting your search terms.'
+                  : 'Songs will appear here once they are uploaded to the platform.'}
               </p>
             </div>
           ) : (
@@ -114,6 +147,8 @@ const Home = () => {
                     player.currentIndex === index && player.isPlaying
                   }
                   isActive={player.currentIndex === index}
+                  isLiked={user?.likedSongs?.includes(song._id)}
+                  onLike={user ? handleLike : undefined}
                   onPlay={() => player.playSong(index)}
                   onAddToPlaylist={() => handleAddToPlaylist(song)}
                 />
@@ -131,19 +166,6 @@ const Home = () => {
           playlists={playlists}
           onClose={() => setShowModal(false)}
           onRefresh={fetchPlaylists}
-        />
-      )}
-
-      {showUploadModal && (
-        <UploadSongModal
-          onClose={() => setShowUploadModal(false)}
-          onUploaded={() => {
-            setSearch('');
-            // re-trigger song fetch by nudging search state
-            setSongs([]);
-            setLoading(true);
-            api.get('/songs').then(({ data }) => setSongs(data)).finally(() => setLoading(false));
-          }}
         />
       )}
     </div>

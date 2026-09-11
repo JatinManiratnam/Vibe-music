@@ -1,48 +1,75 @@
 import { useState, useRef } from 'react';
 import api from '../api/axios';
-import { X, UploadCloud, Music, CheckCircle } from 'lucide-react';
+import { X, UploadCloud, CheckCircle } from 'lucide-react';
 import '../styles/UploadSongModal.css';
 
 const UploadSongModal = ({ onClose, onUploaded }) => {
   const [form, setForm] = useState({ title: '', artist: '', album: '', genre: '' });
-  const [file, setFile] = useState(null);
-  const [dragging, setDragging] = useState(false);
+  const [standardFile, setStandardFile] = useState(null);
+  const [losslessFile, setLosslessFile] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const fileInputRef = useRef();
+  
+  const standardInputRef = useRef();
+  const losslessInputRef = useRef();
+  const coverInputRef = useRef();
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleFile = (selected) => {
+  const handleStandardFile = (e) => {
+    const selected = e.target.files[0];
     if (!selected) return;
-    if (!selected.type.startsWith('audio/')) {
-      setError('Please select a valid audio file (mp3, wav, m4a, etc.)');
+    if (!['audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/ogg', 'audio/aac'].includes(selected.type) && !selected.name.match(/\.(mp3|m4a|aac|ogg)$/i)) {
+      setError('Standard audio must be MP3, M4A, AAC, or OGG');
       return;
     }
     setError('');
-    setFile(selected);
+    setStandardFile(selected);
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    handleFile(e.dataTransfer.files[0]);
+  const handleLosslessFile = (e) => {
+    const selected = e.target.files[0];
+    if (!selected) return;
+    if (!['audio/flac', 'audio/wav', 'audio/x-flac', 'audio/vnd.wave'].includes(selected.type) && !selected.name.match(/\.(flac|wav)$/i)) {
+      setError('Lossless audio must be FLAC or WAV');
+      return;
+    }
+    setError('');
+    setLosslessFile(selected);
   };
+
+  const handleCoverFile = (e) => {
+    const selected = e.target.files[0];
+    if (!selected) return;
+    if (!selected.type.startsWith('image/')) {
+      setError('Please select a valid image file for the cover.');
+      return;
+    }
+    setError('');
+    setCoverFile(selected);
+    setCoverPreview(URL.createObjectURL(selected));
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!file) { setError('Please choose an audio file.'); return; }
+    if (!standardFile && !losslessFile) { setError('Please choose at least one audio file (Standard or Lossless).'); return; }
     if (!form.title.trim()) { setError('Title is required.'); return; }
     if (!form.artist.trim()) { setError('Artist is required.'); return; }
 
     try {
       setUploading(true);
       const formData = new FormData();
-      formData.append('audio', file);
+      if (standardFile) formData.append('audioStandard', standardFile);
+      if (losslessFile) formData.append('audioLossless', losslessFile);
+      if (coverFile) formData.append('cover', coverFile);
+      
       formData.append('title', form.title.trim());
       formData.append('artist', form.artist.trim());
       if (form.album.trim()) formData.append('album', form.album.trim());
@@ -79,34 +106,35 @@ const UploadSongModal = ({ onClose, onUploaded }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="upload-form">
-          {/* Drop Zone */}
-          <div
-            className={`drop-zone ${dragging ? 'dragging' : ''} ${file ? 'has-file' : ''}`}
-            onClick={() => fileInputRef.current.click()}
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-          >
-            {file ? (
-              <div className="drop-zone-file">
-                <Music size={28} />
-                <span className="drop-file-name">{file.name}</span>
-                <span className="drop-file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
-              </div>
-            ) : (
-              <div className="drop-zone-empty">
-                <UploadCloud size={36} />
-                <p>Drag & drop your audio file here</p>
-                <span>or click to browse (mp3, wav, m4a, flac · max 50 MB)</span>
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="audio/*"
-              style={{ display: 'none' }}
-              onChange={(e) => handleFile(e.target.files[0])}
-            />
+          {/* Audio Variants Upload Zone */}
+          <div className="upload-quality-section" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="quality-box" style={{ flex: 1, padding: '1rem', border: '1px dashed #3f3f4e', borderRadius: '8px', textAlign: 'center', background: standardFile ? '#2c2c35' : 'transparent' }}>
+              <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff' }}>Standard Quality</h4>
+              <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '0 0 1rem 0' }}>MP3, AAC, M4A, OGG<br/>(Best for streaming)</p>
+              {standardFile ? (
+                <div style={{ fontSize: '0.9rem', color: '#1db954' }}>
+                  {standardFile.name} ({(standardFile.size / 1024 / 1024).toFixed(2)} MB)
+                  <br/><button type="button" onClick={() => setStandardFile(null)} style={{ background:'none', border:'none', color:'#ff4444', cursor:'pointer', marginTop:'0.5rem' }}>Remove</button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => standardInputRef.current.click()} className="upload-cover-btn" style={{ padding: '0.5rem 1rem', background: '#3f3f4e', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}>Select File</button>
+              )}
+              <input ref={standardInputRef} type="file" accept=".mp3,.aac,.m4a,.ogg,audio/mpeg,audio/mp4,audio/aac,audio/ogg" style={{ display: 'none' }} onChange={handleStandardFile} />
+            </div>
+
+            <div className="quality-box" style={{ flex: 1, padding: '1rem', border: '1px dashed #3f3f4e', borderRadius: '8px', textAlign: 'center', background: losslessFile ? '#2c2c35' : 'transparent' }}>
+              <h4 style={{ margin: '0 0 0.5rem 0', color: '#fff' }}>Lossless Quality</h4>
+              <p style={{ fontSize: '0.8rem', color: '#aaa', margin: '0 0 1rem 0' }}>FLAC, WAV<br/>(High fidelity, larger file)</p>
+              {losslessFile ? (
+                <div style={{ fontSize: '0.9rem', color: '#1db954' }}>
+                  {losslessFile.name} ({(losslessFile.size / 1024 / 1024).toFixed(2)} MB)
+                  <br/><button type="button" onClick={() => setLosslessFile(null)} style={{ background:'none', border:'none', color:'#ff4444', cursor:'pointer', marginTop:'0.5rem' }}>Remove</button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => losslessInputRef.current.click()} className="upload-cover-btn" style={{ padding: '0.5rem 1rem', background: '#3f3f4e', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}>Select File</button>
+              )}
+              <input ref={losslessInputRef} type="file" accept=".flac,.wav,audio/flac,audio/wav" style={{ display: 'none' }} onChange={handleLosslessFile} />
+            </div>
           </div>
 
           {/* Metadata fields */}
@@ -157,6 +185,38 @@ const UploadSongModal = ({ onClose, onUploaded }) => {
                   onChange={handleChange}
                   disabled={uploading}
                 />
+              </div>
+            </div>
+            
+            <div className="upload-row">
+              <div className="upload-field" style={{ width: '100%' }}>
+                <label>Cover Image (optional) - max 5MB</label>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <button 
+                    type="button" 
+                    className="upload-cover-btn"
+                    onClick={() => coverInputRef.current.click()}
+                    disabled={uploading}
+                    style={{ padding: '0.5rem 1rem', background: '#2c2c35', border: '1px solid #3f3f4e', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}
+                  >
+                    Select Image
+                  </button>
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/jpeg, image/png, image/webp"
+                    style={{ display: 'none' }}
+                    onChange={handleCoverFile}
+                  />
+                  {coverFile && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <span style={{ fontSize: '0.9rem', color: '#aaa' }}>{coverFile.name}</span>
+                      {coverPreview && (
+                        <img src={coverPreview} alt="Cover preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

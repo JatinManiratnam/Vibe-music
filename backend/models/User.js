@@ -20,6 +20,15 @@ const userSchema = new mongoose.Schema(
       required: [true, 'Password is required'],
       minlength: 6,
     },
+    role: {
+      type: String,
+      enum: ['listener', 'contributor', 'admin'],
+      default: 'listener',
+    },
+    likedSongs: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Song'
+    }],
   },
   { timestamps: true }
 );

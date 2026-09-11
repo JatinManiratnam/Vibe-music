@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import '../styles/LandingPage.css';
 
 /* ── SVG Icons ─────────────────────────────────────────── */
@@ -89,7 +89,6 @@ const FEATURES = [
 
 /* ── Landing Page Component ─────────────────────────────── */
 export default function LandingPage() {
-  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 

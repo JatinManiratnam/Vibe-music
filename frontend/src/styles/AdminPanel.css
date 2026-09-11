@@ -1,0 +1,316 @@
+/* ── Admin Panel Layout ──────────────────────────────────────── */
+.ap-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────── */
+.ap-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--bg-2);
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.ap-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px 20px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text);
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 12px;
+}
+.ap-sidebar-brand svg { color: var(--accent-light); }
+
+.ap-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.ap-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.18s, color 0.18s;
+}
+.ap-nav-item:hover { background: var(--bg-card-hover); color: var(--text); text-decoration: none; }
+.ap-nav-active { background: var(--accent-dim) !important; color: var(--accent-light) !important; }
+
+.ap-sidebar-footer {
+  padding: 0 8px;
+  border-top: 1px solid var(--glass-border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ap-nav-logout:hover { color: #e88 !important; }
+
+/* ── Main ────────────────────────────────────────────────────── */
+.ap-main {
+  flex: 1;
+  padding: 32px 36px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ap-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ap-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.ap-subtitle { font-size: 12px; color: var(--text-muted); }
+
+.ap-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: 1px solid var(--glass-border);
+  background: none;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.ap-refresh-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+/* ── Messages ────────────────────────────────────────────────── */
+.ap-msg {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+}
+.ap-msg-success {
+  background: rgba(79,121,66,0.12);
+  border: 1px solid rgba(79,121,66,0.3);
+  color: var(--accent-light);
+}
+.ap-msg-error {
+  background: rgba(192,57,43,0.1);
+  border: 1px solid rgba(192,57,43,0.28);
+  color: #e88;
+}
+
+/* ── Section ─────────────────────────────────────────────────── */
+.ap-section { display: flex; flex-direction: column; gap: 16px; }
+.ap-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.ap-section-desc { font-size: 12px; color: var(--text-muted); margin-top: -10px; }
+
+.ap-loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+/* ── Stats ───────────────────────────────────────────────────── */
+.ap-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.ap-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ap-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+
+.ap-stat-body { display: flex; flex-direction: column; gap: 2px; }
+.ap-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'Montserrat', sans-serif;
+  letter-spacing: -0.02em;
+}
+.ap-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+/* ── Table ───────────────────────────────────────────────────── */
+.ap-table-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.ap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ap-table thead tr {
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.ap-table th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.ap-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--text);
+  vertical-align: middle;
+}
+.ap-table tbody tr:last-child td { border-bottom: none; }
+.ap-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+.ap-row-self { background: rgba(79,121,66,0.05) !important; }
+
+.ap-email { color: var(--text-muted); font-size: 12px; }
+.ap-date  { color: var(--text-subtle); font-size: 12px; white-space: nowrap; }
+.ap-no-action { color: var(--text-subtle); }
+
+/* ── Role badge ─────────────────────────────────────────────── */
+.ap-role-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ap-role-listener    { background: rgba(255,255,255,0.07); color: var(--text-muted); }
+.ap-role-contributor { background: rgba(59,130,246,0.15);  color: #7dbfff; }
+.ap-role-admin       { background: rgba(79,121,66,0.18);   color: var(--accent-light); }
+
+/* ── Role select ─────────────────────────────────────────────── */
+.ap-role-select-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.ap-role-select {
+  appearance: none;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 12px;
+  padding: 5px 28px 5px 10px;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.ap-role-select:focus { border-color: var(--accent); }
+.ap-role-select:disabled { opacity: 0.4; cursor: not-allowed; }
+.ap-select-arrow {
+  position: absolute;
+  right: 8px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* ── Delete button ───────────────────────────────────────────── */
+.ap-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-subtle);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.ap-delete-btn:hover { color: #e88; background: rgba(192,57,43,0.1); }
+.ap-delete-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ap-layout { flex-direction: column; }
+  .ap-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--glass-border);
+    overflow-x: auto;
+    gap: 4px;
+  }
+  .ap-sidebar-brand { border-bottom: none; padding: 0 14px 0 0; margin-bottom: 0; border-right: 1px solid var(--glass-border); white-space: nowrap; }
+  .ap-nav { flex-direction: row; padding: 0; gap: 2px; }
+  .ap-sidebar-footer { flex-direction: row; border-top: none; border-left: 1px solid var(--glass-border); padding: 0 0 0 8px; margin-left: 4px; }
+  .ap-main { padding: 16px; }
+}

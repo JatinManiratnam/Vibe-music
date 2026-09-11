@@ -1,8 +1,18 @@
 import { useAuth } from '../context/AuthContext';
-import { Search, LogOut, Music, UploadCloud } from 'lucide-react';
+import { Search, LogOut, Music } from 'lucide-react';
 import '../styles/Navbar.css';
 
-const Navbar = ({ search, setSearch, onUploadClick }) => {
+/**
+ * Navbar — Listener portal only.
+ *
+ * This is the navigation bar for the /home music experience.
+ * Contributor and admin portals have their own dedicated sidebar navigation
+ * inside ContributorDashboard and AdminPanel respectively.
+ *
+ * No role-specific items appear here. Upload, Dashboard, and Admin
+ * links live exclusively within their own portals.
+ */
+const Navbar = ({ search, setSearch }) => {
   const { user, logout } = useAuth();
 
   return (
@@ -25,15 +35,6 @@ const Navbar = ({ search, setSearch, onUploadClick }) => {
 
       <div className="navbar-user">
         <span className="user-name">👋 {user?.name}</span>
-        <button
-          id="upload-btn"
-          className="upload-nav-btn"
-          onClick={onUploadClick}
-          title="Upload Song"
-        >
-          <UploadCloud size={18} />
-          <span>Upload</span>
-        </button>
         <button
           id="logout-btn"
           className="logout-btn"

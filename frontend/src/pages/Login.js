@@ -18,8 +18,17 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      await login(form.email, form.password);
-      navigate('/home');
+      const data = await login(form.email, form.password);
+      const role = data.role ?? 'listener';
+
+      // Role determines destination — user never chooses
+      if (role === 'admin') {
+        navigate('/admin');
+      } else if (role === 'contributor') {
+        navigate('/dashboard');
+      } else {
+        navigate('/home');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Try again.');
     } finally {
@@ -35,7 +44,7 @@ const Login = () => {
           <h1>Vibe Music</h1>
         </div>
         <h2>Welcome back</h2>
-        <p className="auth-subtitle">Sign in to continue listening</p>
+        <p className="auth-subtitle">Sign in to continue</p>
 
         {error && <div className="auth-error">{error}</div>}
 

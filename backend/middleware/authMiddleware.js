@@ -30,4 +30,16 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+// Middleware factory: restrict access to one or more roles.
+// Must be used AFTER protect so that req.user is populated.
+const requireRole = (...roles) => (req, res, next) => {
+  const userRole = req.user?.role ?? 'listener';
+  if (!roles.includes(userRole)) {
+    return res.status(403).json({
+      message: `Forbidden: requires role [${roles.join(' | ')}], you have [${userRole}]`,
+    });
+  }
+  next();
+};
+
+module.exports = { protect, requireRole };
