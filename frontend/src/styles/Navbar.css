@@ -93,3 +93,51 @@
   background: var(--accent);
   color: #fff;
 }
+
+/* ── Hamburger (mobile only) ── */
+.navbar-hamburger {
+  display: none;
+}
+
+/* ── Mobile navbar responsive ── */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  /* Show hamburger with a proper tap target */
+  .navbar-hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    transition: color 0.18s, background 0.18s;
+    padding: 4px;
+  }
+
+  .navbar-hamburger:hover {
+    color: var(--text);
+    background: var(--bg-card-hover);
+  }
+
+  /* Hide brand text on very small screens to keep the search bar usable */
+  .navbar-brand span {
+    display: none;
+  }
+
+  /* Shrink brand SVG gap */
+  .navbar-brand {
+    gap: 0;
+  }
+
+  /* Hide username text — keep only icon elements */
+  .user-name {
+    display: none;
+  }
+}
+

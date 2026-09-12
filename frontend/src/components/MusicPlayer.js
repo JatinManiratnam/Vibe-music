@@ -108,7 +108,7 @@ const MusicPlayer = ({ player }) => {
       {/* Right Controls: Quality & Volume */}
       <div className="player-right-controls" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
         {currentSong && (
-          <div className="quality-pill" style={{ display: 'flex', background: '#181818', borderRadius: '12px', padding: '2px', border: '1px solid #3f3f4e' }}>
+          <div className="quality-pill player-quality-wrap" style={{ display: 'flex', background: '#181818', borderRadius: '12px', padding: '2px', border: '1px solid #3f3f4e' }}>
             <button
               onClick={() => changeQuality('standard')}
               style={{ background: preferredQuality === 'standard' ? '#3f3f4e' : 'transparent', color: actualQuality === 'standard' ? '#fff' : '#aaa', border: 'none', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', cursor: 'pointer', fontWeight: actualQuality === 'standard' ? 'bold' : 'normal' }}

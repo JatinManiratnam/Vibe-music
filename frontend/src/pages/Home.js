@@ -23,6 +23,7 @@ const Home = () => {
   const [recsLoading, setRecsLoading] = useState(true);
   const [recsError, setRecsError] = useState(false);
   const [activeQueueType, setActiveQueueType] = useState('all'); // 'all', 'playlist', 'recommendations', 'liked'
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, updateUser } = useAuth();
   const { player, setQueue, setPlaySource } = useGlobalPlayer();
 
@@ -131,12 +132,15 @@ const Home = () => {
           setActivePlaylist(null);
         }}
         activeQueueType={activeQueueType}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       <div className="home-main">
         <Navbar
           search={search}
           setSearch={setSearch}
+          onMenuToggle={() => setIsSidebarOpen(prev => !prev)}
         />
 
         <div className="home-content" style={{ paddingBottom: '120px' }}>

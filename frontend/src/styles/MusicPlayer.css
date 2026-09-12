@@ -142,3 +142,136 @@
   color: var(--text-muted);
 }
 .volume-slider { width: 90px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mobile Music Player  (≤ 768px)
+   Layout — three flex rows inside a wrapping container:
+     Row 1: [cover] [song info]  [shuffle] [prev] [▶] [next]
+     Row 2: [time] ──progress──────────────────────── [duration]
+     Row 3: [STD | FLAC]                                        [✕]
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Container ─────────────────────────────────────────────────── */
+  .music-player {
+    height: auto;
+    min-height: 60px;
+
+    /* Allow children to wrap into multiple rows */
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+    row-gap: 4px;
+
+    padding: 8px 10px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* ── Row 1 : cover + song info ─────────────────────────────────── */
+  .player-song-info {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    /* Cap so long titles don't crowd the control buttons */
+    max-width: 38vw;
+  }
+
+  .player-cover {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+
+  .player-title  { font-size: 12px; }
+  .player-artist { font-size: 10px; }
+
+  /* ── Row 1 : playback controls (fills remaining space) ─────────── */
+  .player-center {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: nowrap;         /* controls stay in a single line */
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0;
+  }
+
+  .player-controls {
+    gap: 0;
+    flex-shrink: 0;
+  }
+
+  /* Larger tap targets */
+  .ctrl-btn {
+    padding: 6px;
+    min-width: 34px;
+    min-height: 34px;
+  }
+
+  .play-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Hide repeat — lowest priority control */
+  .player-controls .ctrl-btn:last-child { display: none; }
+
+  /* ── Row 2 : progress bar (full width) ──────────────────────────── */
+  .player-progress {
+    width: 100%;
+    max-width: 100%;
+    flex-basis: 100%;
+    order: 10;
+    gap: 5px;
+    margin-top: 2px;
+  }
+
+  .time { font-size: 9px; width: 26px; }
+
+  .progress-slider::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* ── Row 3 : quality selector + dismiss ────────────────────────── */
+  .player-right-controls {
+    /* Override the inline display:flex — keep it as flex */
+    display: flex !important;
+    width: 100%;
+    flex-basis: 100%;
+    order: 20;                          /* after progress bar */
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  /* Hide the volume section only */
+  .player-volume { display: none; }
+
+  /* Quality pill — keep it compact but fully visible */
+  .player-quality-wrap {
+    /* Override the inline display:flex */
+    display: flex !important;
+    flex-shrink: 0;
+  }
+
+  /* Make the STD / FLAC buttons slightly more tappable */
+  .player-quality-wrap button {
+    min-height: 28px;
+    min-width: 36px;
+    font-size: 0.68rem !important;
+    padding: 3px 7px !important;
+  }
+
+  /* Dismiss (✕) button — keep visible with a good tap target */
+  .player-right-controls > .ctrl-btn {
+    display: flex;
+    min-width: 36px;
+    min-height: 36px;
+    margin-left: auto;   /* push X to far right */
+    padding: 6px;
+  }
+}

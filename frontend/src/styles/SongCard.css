@@ -129,3 +129,98 @@
 }
 .song-card:hover .add-btn { opacity: 1; }
 .add-btn:hover { color: var(--accent-light); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mobile Song Card  (≤ 768px)
+   Transform the vertical grid card into a compact horizontal list item.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .song-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px;
+    /* Release any fixed height constraints if present */
+    height: auto;
+  }
+
+  /* ── 1. Thumbnail ── */
+  .song-cover-wrap {
+    /* Override the 1:1 aspect ratio that fills the width */
+    aspect-ratio: auto;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    margin-right: 12px;
+  }
+
+  .song-overlay {
+    border-radius: 6px;
+  }
+
+  /* Scale down the play/pause icon slightly for the smaller cover */
+  .play-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .playing-indicator {
+    bottom: 4px;
+    right: 4px;
+    transform: scale(0.7);
+    transform-origin: bottom right;
+  }
+
+  /* ── 2. Text Info ── */
+  .song-info {
+    /* Remove the padding since the card itself handles it */
+    padding: 0;
+    flex: 1;
+    min-width: 0; /* Critical for truncation in flex children */
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .song-title {
+    font-size: 14px;
+  }
+
+  .song-artist {
+    font-size: 11px;
+  }
+
+  .song-meta {
+    /* Hide the album/duration row on mobile list view to keep it clean */
+    display: none;
+  }
+
+  /* If a recommendation reason exists, keep it compact and truncated */
+  .song-reason {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10px !important;
+    margin-top: 2px !important;
+  }
+
+  /* ── 3. Actions ── */
+  /* Target the inline-styled actions container */
+  .song-card-actions {
+    /* Actions sit on the right naturally in the flex row */
+    margin-left: 8px;
+    align-items: center;
+  }
+
+  .like-btn {
+    padding: 4px !important;
+  }
+
+  .add-btn {
+    /* Remove absolute positioning so it flows naturally next to Like */
+    position: static;
+    /* Mobile doesn't have hover, so make it always visible */
+    opacity: 1;
+    padding: 4px;
+  }
+}
+

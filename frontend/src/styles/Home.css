@@ -36,6 +36,26 @@
   gap: 14px;
 }
 
+/* ── Mobile: single-column list layout ── */
+@media (max-width: 768px) {
+  .home-content {
+    /* Reduce the wide desktop horizontal padding.
+       The inline paddingBottom: '120px' in Home.js handles bottom clearance. */
+    padding: 16px;
+  }
+
+  .song-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .section-title {
+    font-size: 16px;
+    margin-bottom: 14px;
+  }
+}
+
+
 .empty-state {
   display: flex;
   flex-direction: column;

@@ -1,5 +1,5 @@
 import { useAuth } from '../context/AuthContext';
-import { Search, LogOut, Music } from 'lucide-react';
+import { Search, LogOut, Music, Menu } from 'lucide-react';
 import '../styles/Navbar.css';
 
 /**
@@ -12,11 +12,20 @@ import '../styles/Navbar.css';
  * No role-specific items appear here. Upload, Dashboard, and Admin
  * links live exclusively within their own portals.
  */
-const Navbar = ({ search, setSearch }) => {
+const Navbar = ({ search, setSearch, onMenuToggle }) => {
   const { user, logout } = useAuth();
 
   return (
     <nav className="navbar">
+      {/* Hamburger — only visible on mobile via CSS */}
+      <button
+        className="navbar-hamburger"
+        onClick={onMenuToggle}
+        aria-label="Open library"
+      >
+        <Menu size={22} />
+      </button>
+
       <div className="navbar-brand">
         <Music size={22} />
         <span>Vibe Music</span>

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import api from '../api/axios';
-import { ListMusic, PlusCircle, Trash2, ChevronRight } from 'lucide-react';
+import { ListMusic, PlusCircle, Trash2, ChevronRight, X } from 'lucide-react';
 import '../styles/Sidebar.css';
 
-const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onClearPlaylist, onSelectLikedSongs, activeQueueType }) => {
+const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onClearPlaylist, onSelectLikedSongs, activeQueueType, isOpen, onClose }) => {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -34,24 +34,46 @@ const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onCle
     }
   };
 
+  // Close the drawer when a nav item is selected (mobile only — noop on desktop)
+  const handleNavAction = (action) => {
+    action();
+    if (onClose) onClose();
+  };
+
   return (
-    <aside className="sidebar">
+    <>
+      {/* Mobile backdrop — only visible when drawer is open */}
+      {isOpen && (
+        <div className="sidebar-backdrop" onClick={onClose} aria-hidden="true" />
+      )}
+
+      <aside className={`sidebar${isOpen ? ' sidebar-open' : ''}`}>
       <div className="sidebar-header">
         <ListMusic size={20} />
         <span>Your Library</span>
+        {/* Close button — only visible on mobile via CSS */}
+        {onClose && (
+          <button
+            className="sidebar-close-btn"
+            onClick={onClose}
+            aria-label="Close library"
+          >
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       <div className="sidebar-section">
         <div
           className={`sidebar-item all-songs ${activeQueueType === 'all' && !activePlaylist ? 'active' : ''}`}
-          onClick={onClearPlaylist}
+          onClick={() => handleNavAction(onClearPlaylist)}
         >
           <span>🎵 All Songs</span>
           <ChevronRight size={14} />
         </div>
         <div
           className={`sidebar-item liked-songs ${activeQueueType === 'liked' && !activePlaylist ? 'active' : ''}`}
-          onClick={onSelectLikedSongs}
+          onClick={() => handleNavAction(onSelectLikedSongs)}
         >
           <span>❤️ Liked Songs</span>
           <ChevronRight size={14} />
@@ -67,7 +89,7 @@ const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onCle
           <div
             key={pl._id}
             className={`sidebar-item ${activePlaylist?._id === pl._id ? 'active' : ''}`}
-            onClick={() => onSelectPlaylist(pl)}
+            onClick={() => handleNavAction(() => onSelectPlaylist(pl))}
           >
             <span className="pl-name" title={pl.name}>📋 {pl.name}</span>
             <div className="pl-actions">
@@ -92,7 +114,7 @@ const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onCle
           <div
             key={pl._id}
             className={`sidebar-item ${activePlaylist?._id === pl._id ? 'active' : ''}`}
-            onClick={() => onSelectPlaylist(pl)}
+            onClick={() => handleNavAction(() => onSelectPlaylist(pl))}
           >
             <span className="pl-name" title={pl.name}>✨ {pl.name}</span>
             <div className="pl-actions">
@@ -129,7 +151,8 @@ const Sidebar = ({ playlists, onRefresh, onSelectPlaylist, activePlaylist, onCle
           </button>
         )}
       </div>
-    </aside>
+      </aside>
+    </>
   );
 };
 
